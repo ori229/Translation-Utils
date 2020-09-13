@@ -4,17 +4,6 @@ Import-Module $PSScriptRoot\Utils-Excel.ps1    -Force
 Import-Module $PSScriptRoot\Utils-UilFiles.ps1 -Force
 Import-Module $PSScriptRoot\Utils-General.ps1  -Force
 
-# TODO:
-# Handle all 3 branches
-# Generate UIL file
-# Save old UIL file with timestamp
-
-# commit - From which dir?  DESCRIPTION=JIRA: URM-24347 Developer: almatranslation Description: ...
-# svn commit --username ${SVN_USER} --password ${SVN_PASS} -m "${DESCRIPTION} build id:${BUILD_ID} " ${WORKSPACE}/factory_settings/alma_labels.uil
-
-# Export:
-# From DB? support all filters - perhaps with configuration to allow running just once
-
 ######################################
 function main() {
     $pathRoot = $PSScriptRoot+"\small_test\"
@@ -31,12 +20,18 @@ function main() {
 
     readExcelFiles
 
-    fetchUilFilesFromSvn
-    readUilFiles
+    foreach ($branchUrl in (getSvnBranchesUrls).GetEnumerator()) {
+        Write-Host "_________________________"
 
-    verifyExcelsAreInUil
+        fetchUilFilesFromSvn $branchUrl
+        readUilFiles
+
+        verifyExcelsAreInUil
+    }
 
     log "Done!"
+    #echo "Press any key to close"
+    #cmd /c pause | out-null
 }
 
 ######################################

@@ -1,17 +1,9 @@
 
 ######################################
-function getPreviousBranchName() {
-    # TODO...
-    # Maybe using the list from here: http://urmbuild:Alma2017!@il-cvs01/repos/Alma/Alma/branches
-    return "September2020"
-}
-
-######################################
-function fetchUilFilesFromSvn() {
+function fetchUilFilesFromSvn($baseurl) {
+    Write-Host "Fetching the files from "$branchUrl
     $basicAuthValue = getSvnBasicAuthVal
     $Headers = @{    Authorization = $basicAuthValue     }
-
-    $baseurl = "http://il-cvs01/repos/Alma/Alma/branches/" + (getPreviousBranchName) + "-PROD/dps-build-runtime/src/main/sql/factory_settings/"
 
     if ((Test-Path $pathRoot"alma_labels.uil"))             {    Remove-Item $pathRoot"alma_labels.uil" }
     if ((Test-Path $pathRoot"code_tables_translation.uil")) {    Remove-Item $pathRoot"code_tables_translation.uil" }
@@ -30,8 +22,8 @@ function readUilFiles() {
 	readOneUilFile $dir"alma_labels.uil"
     readOneUilFile $dir"code_tables_translation.uil"
 
-    #$sizeOfHash = $tableCodeAndLangToText_Excel.Count
-    log "All translation in UIL files: " ($tableCodeAndLangToText_Excel.Count)
+    $sizeOfHash = $tableCodeAndLangToText_Excel.Count
+    log "All translation in UIL files: $sizeOfHash"
 }
 
 ######################################

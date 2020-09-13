@@ -13,3 +13,24 @@ function getSvnBasicAuthVal() {
     $encodedCreds = [System.Convert]::ToBase64String([System.Text.Encoding]::ASCII.GetBytes($user_pw))
     return "Basic $encodedCreds"
 }
+
+######################################
+function getSvnBranchesUrls() {
+    $svnUrlPrefix = "http://il-cvs01/repos/Alma/Alma/";
+    $svnUrlSuffix = "/dps-build-runtime/src/main/sql/factory_settings/"
+
+    $branches = @(
+        $svnUrlPrefix + "trunk/alma_soft"                               + $svnUrlSuffix
+        $svnUrlPrefix + "branches/alma_release"                         + $svnUrlSuffix
+        $svnUrlPrefix + "branches/" + (getPreviousBranchName) + "-PROD" + $svnUrlSuffix
+    )
+    return $branches
+}
+
+######################################
+function getPreviousBranchName() {
+    # TODO...
+    # Maybe using the list from here: http://urmbuild:Alma2017!@il-cvs01/repos/Alma/Alma/branches
+    return "September2020"
+}
+
