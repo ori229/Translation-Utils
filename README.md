@@ -2,17 +2,18 @@
  
 Export translations from Alma into Excel file per language.
 
-Import the Excel, merge into UIL files, and commit them to SVN.
+Import the Excel files, merge into the 2 big UIL files, and commit them to SVN.
 
 Compare Excel file to the UIL to verify the labels were merged.
 
-# TODO:
-# Handle all 3 branches
-# Generate UIL file
-# Save old UIL file with timestamp
+### TODO:
 
-# commit - From which dir?  DESCRIPTION=JIRA: URM-24347 Developer: almatranslation Description: ...
-# svn commit --username ${SVN_USER} --password ${SVN_PASS} -m "${DESCRIPTION} build id:${BUILD_ID} " ${WORKSPACE}/factory_settings/alma_labels.uil
+# Import:
+Generate UIL files
+Save old UIL files with timestamp
+Commit - From which dir?
+svn commit --username "orim" --password "..." -m "JIRA: URM-24347 Developer: orim Description: test" code_tables_data_customer1.xml
 
 # Export:
-# From DB? support all filters - perhaps with configuration to allow running just once
+From DB? support all filters - perhaps with configuration to allow running just once
+According to mapping_table_TranslationData.xml (from the Release branch)
