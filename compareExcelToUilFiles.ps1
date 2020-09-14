@@ -51,6 +51,4 @@ function verifyExcelsAreInUil() {
 
 }
 
-########################
-# We run the main() from here to make sure all functions are loaded each time we run this file
 main

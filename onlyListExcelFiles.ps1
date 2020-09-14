@@ -1,5 +1,8 @@
+Set-StrictMode -Version Latest
+
+######################################
 function main() {
-    $pathRoot = "C:\Temp\1\small\"
+    $pathRoot = $PSScriptRoot+"\small_test\"
     log "Starting - folder: $pathRoot"
     readExcelFiles
 }
@@ -25,6 +28,4 @@ function readExcelFiles() {
 	$excel.Quit()  
 }
 
-########################
-# We run the main() from here to make sure all functions are loaded each time we run this file
 main
