@@ -13,7 +13,7 @@ function main() {
     $logFile = $pathRoot+$now+".log.txt"
     log "Starting - folder: $pathRoot"
 
-    $DEL = " |-|-| "
+    $DEL = " zzz "
     
     $tableCodeAndLangToText_Excel = new-object System.Collections.Hashtable # case sensitive
     $tableCodeAndLangToText_Uil   = new-object System.Collections.Hashtable # case sensitive

@@ -17,3 +17,4 @@ svn commit --username "orim" --password "..." -m "JIRA: URM-24347 Developer: ori
 # Export:
 From DB? support all filters - perhaps with configuration to allow running just once
 According to mapping_table_TranslationData.xml (from the Release branch)
+Allow exporting only delta

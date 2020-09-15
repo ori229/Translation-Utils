@@ -1,7 +1,14 @@
+
 ######################################
 function readExcelFiles() {
 	foreach($file in (Get-ChildItem -path "$pathRoot*" -include *.xlsx )) {
-		log "Reading $file ..."
+        readExcelFile($file)
+	}
+}
+
+######################################
+function readExcelFile($file) {
+		log "Reading Excel $file ..."
 
         $intRow = 2
         $content = Import-Excel $file
@@ -29,9 +36,18 @@ function readExcelFiles() {
             }
             $linesWithTranslations++
                         
+            $smallHashKey = $codeTableName + $DEL + $code
+
+            if ($tableAndCodeToNothing_Excel.ContainsKey($smallHashKey)) {
+                # OK - probably other excel had translation for it to another lang
+            } else {
+                #log "adding $smallHashKey"
+                $tableAndCodeToNothing_Excel.add($smallHashKey, 'exists')
+            }
+
             $hashKey = $codeTableName + $DEL + $code + $DEL + $lang
             if ($tableCodeAndLangToText_Excel.ContainsKey($hashKey)) {
-                log "key twice in Excel files: $hashKey" #TODO test
+                log "  WARNING: key twice in Excel files: $hashKey" #TODO test
             } else {
                 $tableCodeAndLangToText_Excel.add($hashKey, $translation)
                 #log "...........added to Excel hash:", $hashKey, $translation
@@ -39,9 +55,7 @@ function readExcelFiles() {
 
         }
         log "  Found $linesWithTranslations lines with translations"
-	}
 }
-
 
 function Import-Excel([string]$FilePath, [string]$SheetName = "")
 {
@@ -93,6 +107,39 @@ function SetActiveSheet([Object]$workbook, [string]$name)
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 # Slow method:
 ######################################
 function readExcelFiles_slow() {
@@ -115,6 +162,11 @@ function readExcelFiles_slow() {
 			$codeTableName    = $sh.Cells.Item($intRow,1).Text
 			$code         = $sh.Cells.Item($intRow,2).Text.Trim() # .Trim() ?
 			$translation  = $sh.Cells.Item($intRow,5).Text.Trim()
+
+            #TODO :
+            #translation = translation.replaceAll("[\n\r\f\t]", " ");
+            #// backspace to ""
+            #translation = translation.replaceAll("\b", "");
 
             if ([string]::IsNullOrEmpty($translation)) {
                 #log "Skip empty translation for $code"
