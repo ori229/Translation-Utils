@@ -38,11 +38,11 @@ function readExcelFile($file) {
                         
             $smallHashKey = $codeTableName + $DEL + $code
 
-            if ($tableAndCodeToNothing_Excel.ContainsKey($smallHashKey)) {
+            if ($tableAndCodeToInfo_Excel.ContainsKey($smallHashKey)) {
                 # OK - probably other excel had translation for it to another lang
             } else {
                 #log "adding $smallHashKey"
-                $tableAndCodeToNothing_Excel.add($smallHashKey, 'exists')
+                $tableAndCodeToInfo_Excel.add($smallHashKey, 'exists')
             }
 
             $hashKey = $codeTableName + $DEL + $code + $DEL + $lang

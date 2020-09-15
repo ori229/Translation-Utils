@@ -16,7 +16,7 @@ function main() {
     $DEL = " zzz "
     
     $tableCodeAndLangToText_Excel = new-object System.Collections.Hashtable # case sensitive
-    $tableAndCodeToNothing_Excel  = new-object System.Collections.Hashtable # case sensitive
+    $tableAndCodeToInfo_Excel     = new-object System.Collections.Hashtable # case sensitive
     #$tableCodeAndLangToText_Uil   = new-object System.Collections.Hashtable # case sensitive
 
     readExcelFiles

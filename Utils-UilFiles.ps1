@@ -80,8 +80,11 @@ function createNewUilFile($filename) {
 	$lineNum = 0
 	$langCodes = @()
     $outFile = $filename+".new.txt"
-    $stream = [System.IO.StreamWriter] $outFile
-    log "Reading $fileName and writing $outFile ..."
+    Clear-Content $outFile
+    $stream = [IO.StreamWriter]::new($outFile, $false, [Text.Encoding]::BigEndianUnicode)
+
+
+    log "Reading      $fileName `n and writing $outFile ..."
 	foreach($line in Get-Content $fileName) {
 		$lineNum++
         if ($lineNum%10000 -eq 0) { log "...done reading $lineNum lines" }
@@ -95,7 +98,7 @@ function createNewUilFile($filename) {
             $code = $cols[1].Trim()
 
             $smallHashKey = $codeTableName + $DEL + $code
-            if (-not $tableAndCodeToNothing_Excel.ContainsKey($smallHashKey)) {
+            if (-not $tableAndCodeToInfo_Excel.ContainsKey($smallHashKey)) {
                 #log " No changes for this line - simply print it as is $smallHashKey"
                 appendLineFromString $line $outFile
                 continue
@@ -105,14 +108,15 @@ function createNewUilFile($filename) {
             $updatedLineArray = [System.Collections.ArrayList]@()
             $tempNum = $updatedLineArray.Add($cols[0])
             $tempNum = $updatedLineArray.Add($cols[1])
-            for ($j = 2; $j -lt $cols.length -and $j -lt $langCodes.length; $j++) {
+            for ($j = 2; $j -lt $langCodes.length; $j++) {
+                $existingTranslation = ""
                 if ($j -lt $cols.length) {
-                    $existingTranslation = $cols[$j].Trim()
+                    $existingTranslation = $cols[$j]
                 }
                 $langCodeForCol = $langCodes[$j]
                 $hashKey = $codeTableName + $DEL + $code + $DEL + $langCodeForCol
                 if ($tableCodeAndLangToText_Excel.ContainsKey($hashKey)) {
-                    $newTranslation = $tableCodeAndLangToText_Excel[$hashKey]
+                    $newTranslation = $tableCodeAndLangToText_Excel[$hashKey].trim()
                     #log " We have new translatino for this lang - $hashKey : $newTranslation"
                     $tempNum = $updatedLineArray.Add($newTranslation)
                 } else {
@@ -121,15 +125,15 @@ function createNewUilFile($filename) {
                 }
             }
             appendLineFromArray $updatedLineArray $outFile
-	        $tableAndCodeToNothing_Excel[$smallHashKey] = 'added'
+	        $tableAndCodeToInfo_Excel[$smallHashKey] = 'added'
 		}
 	}
 
     # handling code-table labels which are translated for the first time
     if ([io.path]::GetFileNameWithoutExtension($filename)  -eq 'code_tables_translation') {
-        foreach ($h in $tableAndCodeToNothing_Excel.GetEnumerator()) {
+        foreach ($h in $tableAndCodeToInfo_Excel.GetEnumerator()) {
             $smallHashKey = $($h.Name)
-            $value = $tableAndCodeToNothing_Excel[$smallHashKey]
+            $value = $tableAndCodeToInfo_Excel[$smallHashKey]
             if ($value -ne 'added') {
                 log " Line from the Excel which were not found in any UIL file: $smallHashKey"
                 $newLineArray = [System.Collections.ArrayList]@()
@@ -180,21 +184,19 @@ function testCreateNewUilFile() {
     Import-Module $PSScriptRoot\Utils-Excel.ps1    -Force
     Import-Module $PSScriptRoot\Utils-General.ps1  -Force
     Write-Host testCreateNewUilFile...
+    
     $pathRoot = $PSScriptRoot+"\test_big_files\"
-    $now = Get-Date -format "yyyy-MM-dd_HH-mm-ss"
+
     $logFile = $pathRoot+"testCreateNewUilFile."+$now+".log.txt"
-    $DEL = " zzz "
-    $tableAndCodeToNothing_Excel  = new-object System.Collections.Hashtable
+    
+    $tableAndCodeToInfo_Excel  = new-object System.Collections.Hashtable
     $tableCodeAndLangToText_Excel = new-object System.Collections.Hashtable
 
-    $excelFileName = $pathRoot+"Big_German_FullUI_Sept2020.xlsx"
-    readExcelFile $excelFileName
+    readExcelFiles
 
-    $uilFileName = $pathRoot+"alma_labels.uil"
-    createNewUilFile $uilFileName
+    createNewUilFile ($pathRoot+"alma_labels.uil")
 
-    $uilFileName = $pathRoot+"code_tables_translation.uil"
-    createNewUilFile $uilFileName
+    createNewUilFile ($pathRoot+"code_tables_translation.uil")
 }
 
 testCreateNewUilFile

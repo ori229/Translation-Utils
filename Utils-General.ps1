@@ -1,5 +1,11 @@
 
 ######################################
+function init() {
+    $now = Get-Date -format "yyyy-MM-dd_HH-mm-ss"
+    $DEL = " zzz "
+}
+
+######################################
 function log($line) {
     Write-Host $line
     $line | out-file -filepath $logFile -append
@@ -34,3 +40,4 @@ function getPreviousBranchName() {
     return "September2020"
 }
 
+init
