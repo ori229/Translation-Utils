@@ -1,11 +1,5 @@
 
 ######################################
-function init() {
-    $now = Get-Date -format "yyyy-MM-dd_HH-mm-ss"
-    $DEL = " zzz "
-}
-
-######################################
 function log($line) {
     Write-Host $line
     $line | out-file -filepath $logFile -append
@@ -39,5 +33,3 @@ function getPreviousBranchName() {
     # Maybe using the list from here: http://urmbuild:Alma2017!@il-cvs01/repos/Alma/Alma/branches
     return "September2020"
 }
-
-init

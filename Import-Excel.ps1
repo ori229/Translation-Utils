@@ -13,7 +13,7 @@ function main() {
     $logFile = $pathRoot+$now+".log.txt"
     log "Starting import. Folder: $pathRoot"
 
-    $DEL = " zzz "
+    $DEL = " _I_ "
     
     $tableCodeAndLangToText_Excel = new-object System.Collections.Hashtable # case sensitive
     $tableAndCodeToInfo_Excel     = new-object System.Collections.Hashtable # case sensitive

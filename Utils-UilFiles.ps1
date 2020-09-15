@@ -91,9 +91,13 @@ function createNewUilFile($filename) {
 		if ($lineNum -lt 2) {
             writeLineFromString $line $outFile
 			$langCodes = $line.split("`t")
+            log(" Found " + $langCodes.length + " languages, including the table, code (and en in code-table-uil)")
 		}
 		if ($lineNum -gt 1) {
 			$cols = $line.split("`t")
+            if ($cols.Length -gt $langCodes.Length) {
+                log "WARNING: More columns than languages in line $lineNum of $fileName"
+            }
             $codeTableName = $cols[0]
             $code = $cols[1].Trim()
 
@@ -120,7 +124,7 @@ function createNewUilFile($filename) {
                     #log " We have new translatino for this lang - $hashKey : $newTranslation"
                     $tempNum = $updatedLineArray.Add($newTranslation)
                 } else {
-                    #log " No new translatino for this lang - $hashKey"
+                    #log " No new translatino for this lang - $hashKey - using existing: $existingTranslation"
                     $tempNum = $updatedLineArray.Add($existingTranslation)
                 }
             }
@@ -183,6 +187,8 @@ function appendLineFromString ($str, $outFile) {
 function testCreateNewUilFile() {
     Import-Module $PSScriptRoot\Utils-Excel.ps1    -Force
     Import-Module $PSScriptRoot\Utils-General.ps1  -Force
+    $now = Get-Date -format "yyyy-MM-dd_HH-mm-ss"
+    $DEL = " _I_ "
     Write-Host testCreateNewUilFile...
     
     $pathRoot = $PSScriptRoot+"\test_big_files\"
