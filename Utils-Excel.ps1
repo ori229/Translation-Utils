@@ -54,6 +54,7 @@ function readExcelFile($file) {
             }
 
         }
+        log "...done reading $intRow lines"
         log "  Found $linesWithTranslations lines with translations"
 }
 

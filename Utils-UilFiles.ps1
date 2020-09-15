@@ -80,9 +80,11 @@ function createNewUilFile($filename) {
 	$lineNum = 0
 	$langCodes = @()
     $outFile = $filename+".new.txt"
+    $stream = [System.IO.StreamWriter] $outFile
     log "Reading $fileName and writing $outFile ..."
 	foreach($line in Get-Content $fileName) {
 		$lineNum++
+        if ($lineNum%10000 -eq 0) { log "...done reading $lineNum lines" }
 		if ($lineNum -lt 2) {
             writeLineFromString $line $outFile
 			$langCodes = $line.split("`t")
@@ -111,7 +113,7 @@ function createNewUilFile($filename) {
                 $hashKey = $codeTableName + $DEL + $code + $DEL + $langCodeForCol
                 if ($tableCodeAndLangToText_Excel.ContainsKey($hashKey)) {
                     $newTranslation = $tableCodeAndLangToText_Excel[$hashKey]
-                    log " We have new translatino for this lang - $hashKey : $newTranslation"
+                    #log " We have new translatino for this lang - $hashKey : $newTranslation"
                     $tempNum = $updatedLineArray.Add($newTranslation)
                 } else {
                     #log " No new translatino for this lang - $hashKey"
@@ -153,11 +155,13 @@ function createNewUilFile($filename) {
             }
         }
     }
+    log "...done reading $lineNum lines"
+    $stream.close()
 }
 
 ######################################
 function writeLineFromString ($str, $outFile) {
-    $str | out-file -filepath $outFile -Encoding BigEndianUnicode
+    $stream.WriteLine($str)
 }
 
 ######################################
@@ -168,7 +172,7 @@ function appendLineFromArray ($arr, $outFile) {
 
 ######################################
 function appendLineFromString ($str, $outFile) {
-    $str | out-file -filepath $outFile -append  -Encoding BigEndianUnicode
+    $stream.WriteLine($str)
 }
 
 ######################################
@@ -176,16 +180,15 @@ function testCreateNewUilFile() {
     Import-Module $PSScriptRoot\Utils-Excel.ps1    -Force
     Import-Module $PSScriptRoot\Utils-General.ps1  -Force
     Write-Host testCreateNewUilFile...
-    $pathRoot = $PSScriptRoot+"\test_small_files\"
+    $pathRoot = $PSScriptRoot+"\test_big_files\"
     $now = Get-Date -format "yyyy-MM-dd_HH-mm-ss"
     $logFile = $pathRoot+"testCreateNewUilFile."+$now+".log.txt"
     $DEL = " zzz "
     $tableAndCodeToNothing_Excel  = new-object System.Collections.Hashtable
     $tableCodeAndLangToText_Excel = new-object System.Collections.Hashtable
 
-    $excelFileName = $pathRoot+"translation_test_hebrew.xlsx"
+    $excelFileName = $pathRoot+"Big_German_FullUI_Sept2020.xlsx"
     readExcelFile $excelFileName
-
 
     $uilFileName = $pathRoot+"alma_labels.uil"
     createNewUilFile $uilFileName
