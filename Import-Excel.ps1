@@ -6,7 +6,7 @@ Import-Module $PSScriptRoot\Utils-General.ps1  -Force
 
 ######################################
 function main() {
-    $pathRoot = $PSScriptRoot+"\small_test\"
+    $pathRoot = $PSScriptRoot+"\work\"
 
     $now = Get-Date -format "yyyy-MM-dd_HH-mm-ss"
 
@@ -22,13 +22,13 @@ function main() {
     readExcelFiles
 
     foreach ($branchUrl in (getSvnBranchesUrls).GetEnumerator()) {
-        Write-Host "_________________________"
+        log "_________________________"
 
         fetchUilFilesFromSvn $branchUrl
 
         createNewUilFiles
 
-        #backupOldAndRenameNew
+        backupOldAndRenameNew $branchUrl
 
         #commitUpdatedUilFile
     }

@@ -1,14 +1,14 @@
 
 ######################################
 function fetchUilFilesFromSvn($baseurl) {
-    Write-Host "Fetching the files from "$branchUrl
+    log ("Fetching the files from "+$branchUrl)
     $basicAuthValue = getSvnBasicAuthVal
     $Headers = @{    Authorization = $basicAuthValue     }
 
     if ((Test-Path $pathRoot"alma_labels.uil"))             {    Remove-Item $pathRoot"alma_labels.uil" }
     if ((Test-Path $pathRoot"code_tables_translation.uil")) {    Remove-Item $pathRoot"code_tables_translation.uil" }
 
-    $progressPreference = 'silentlyContinue'
+    #$progressPreference = 'silentlyContinue'
     Invoke-WebRequest -Uri $baseurl'alma_labels.uil'             -Headers $Headers -OutFile $pathRoot"alma_labels.uil"
     Invoke-WebRequest -Uri $baseurl'code_tables_translation.uil' -Headers $Headers -OutFile $pathRoot"code_tables_translation.uil"
 }
@@ -71,8 +71,8 @@ function readOneUilFile($fileName) {
 
 ######################################
 function createNewUilFiles() {
-    createNewUilFiles $dir"alma_labels.uil"
-    createNewUilFiles $dir"code_tables_translation.uil"
+    createNewUilFile ($pathRoot+"alma_labels.uil")
+    createNewUilFile ($pathRoot+"code_tables_translation.uil")
 }
 
 ######################################
@@ -80,7 +80,7 @@ function createNewUilFile($filename) {
 	$lineNum = 0
 	$langCodes = @()
     $outFile = $filename+".new.txt"
-    Clear-Content $outFile
+    Clear-Content $outFile -ErrorAction SilentlyContinue
     $stream = [IO.StreamWriter]::new($outFile, $false, [Text.Encoding]::BigEndianUnicode)
 
 
@@ -91,7 +91,7 @@ function createNewUilFile($filename) {
 		if ($lineNum -lt 2) {
             writeLineFromString $line $outFile
 			$langCodes = $line.split("`t")
-            log(" Found " + $langCodes.length + " languages, including the table, code (and en in code-table-uil)")
+            #log(" Found " + $langCodes.length + " languages, including the table, code (and en in code-table-uil)")
 		}
 		if ($lineNum -gt 1) {
 			$cols = $line.split("`t")
@@ -139,7 +139,7 @@ function createNewUilFile($filename) {
             $smallHashKey = $($h.Name)
             $value = $tableAndCodeToInfo_Excel[$smallHashKey]
             if ($value -ne 'added') {
-                log " Line from the Excel which were not found in any UIL file: $smallHashKey"
+                log " Line from the Excel which was not found in any UIL file: $smallHashKey"
                 $newLineArray = [System.Collections.ArrayList]@()
                 
                 $newTable = $smallHashKey -replace "$DEL.*",""
@@ -184,25 +184,6 @@ function appendLineFromString ($str, $outFile) {
 }
 
 ######################################
-function testCreateNewUilFile() {
-    Import-Module $PSScriptRoot\Utils-Excel.ps1    -Force
-    Import-Module $PSScriptRoot\Utils-General.ps1  -Force
-    $now = Get-Date -format "yyyy-MM-dd_HH-mm-ss"
-    $DEL = " _I_ "
-    Write-Host testCreateNewUilFile...
-    
-    $pathRoot = $PSScriptRoot+"\test_big_files\"
-
-    $logFile = $pathRoot+"testCreateNewUilFile."+$now+".log.txt"
-    
-    $tableAndCodeToInfo_Excel  = new-object System.Collections.Hashtable
-    $tableCodeAndLangToText_Excel = new-object System.Collections.Hashtable
-
-    readExcelFiles
-
-    createNewUilFile ($pathRoot+"alma_labels.uil")
-
-    createNewUilFile ($pathRoot+"code_tables_translation.uil")
+function backupOldAndRenameNew($branchUrl) {
+    log $branchUrl
 }
-
-testCreateNewUilFile
