@@ -7,7 +7,7 @@ function log($line) {
 
 ######################################
 function getSvnBasicAuthVal() {
-    $AppProps = convertfrom-stringdata (get-content $PSScriptRoot"\private.properties" -raw)
+    $AppProps = convertfrom-stringdata (get-content $PSScriptRoot"\..\private.properties" -raw)
     #log "      Using user: "($AppProps.'svn.user')
     $user_pw = ($AppProps.'svn.user') + ":" + ($AppProps.'svn.pw')
     $encodedCreds = [System.Convert]::ToBase64String([System.Text.Encoding]::ASCII.GetBytes($user_pw))

@@ -1,8 +1,8 @@
 Set-StrictMode -Version Latest
 
-Import-Module $PSScriptRoot\Utils-Excel.ps1    -Force
-Import-Module $PSScriptRoot\Utils-UilFiles.ps1 -Force
-Import-Module $PSScriptRoot\Utils-General.ps1  -Force
+Import-Module $PSScriptRoot\utils\Utils-Excel.ps1    -Force
+Import-Module $PSScriptRoot\utils\Utils-UilFiles.ps1 -Force
+Import-Module $PSScriptRoot\utils\Utils-General.ps1  -Force
 
 ######################################
 function main() {
