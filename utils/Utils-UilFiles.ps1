@@ -1,7 +1,7 @@
 
 ######################################
 function fetchUilFilesFromSvn($baseurl) {
-    log ("Fetching the files from "+$branchUrl)
+    log ("Fetching the files from "+$baseurl)
     $basicAuthValue = getSvnBasicAuthVal
     $Headers = @{    Authorization = $basicAuthValue     }
 
@@ -23,7 +23,7 @@ function readUilFiles() {
 	readOneUilFile $dir"alma_labels.uil"
     readOneUilFile $dir"code_tables_translation.uil"
 
-    $sizeOfHash = $tableCodeAndLangToText_Excel.Count
+    $sizeOfHash = $tableCodeAndLangToText_Uil.Count
     log "All translation in UIL files: $sizeOfHash"
 }
 
