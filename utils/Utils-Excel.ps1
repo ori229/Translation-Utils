@@ -34,6 +34,10 @@ function readExcelFile($file) {
                 #log "Skip empty translation for $code"
                 return
             }
+            if ([string]::IsNullOrEmpty($code)) {
+                #log "Skip empty code for $translation"
+                return
+            }
             $linesWithTranslations++
                         
             $smallHashKey = $codeTableName + $DEL + $code
