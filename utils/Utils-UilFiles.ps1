@@ -192,8 +192,8 @@ function backupOldAndRenameNew($branchUrl) {
     log "Saving UIL files for $branchUrl"
 
     Rename-Item $pathRoot"code_tables_translation.uil" $pathRoot"code_tables_translation.uil.$branchUrl.$now"
-    Rename-Item $pathRoot"alma_labels.uil"             $pathRoot"alma_labels.uil.new.$branchUrl.$now"
+    Rename-Item $pathRoot"alma_labels.uil"             $pathRoot"alma_labels.uil.$branchUrl.$now"
 
-    Rename-Item $pathRoot"code_tables_translation.uil.new.txt" $pathRoot"code_tables_translation.uil.new.$branchUrl.txt.$now"
-    Rename-Item $pathRoot"alma_labels.uil.new.txt"             $pathRoot"alma_labels.uil.new.$branchUrl.txt.$now"
+    Rename-Item $pathRoot"code_tables_translation.uil.new.txt" $pathRoot"code_tables_translation.uil.$branchUrl.$now.new"
+    Rename-Item $pathRoot"alma_labels.uil.new.txt"             $pathRoot"alma_labels.uil.$branchUrl.$now.new"
 }
