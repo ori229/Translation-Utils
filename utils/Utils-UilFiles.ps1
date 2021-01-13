@@ -70,6 +70,10 @@ function readOneUilFile($fileName) {
 }
 
 ######################################
+# The order is important, because after handling both files, we have the special case for code_tables_translation
+# (adding lines when it's the first translation).
+#
+# Note: if code apears in both files - we'll update in both places. Alma's code only updates code_tables_translation
 function createNewUilFiles() {
     createNewUilFile ($pathRoot+"alma_labels.uil")
     createNewUilFile ($pathRoot+"code_tables_translation.uil")
@@ -129,7 +133,7 @@ function createNewUilFile($filename) {
                 }
             }
             appendLineFromArray $updatedLineArray $outFile
-	        $tableAndCodeToInfo_Excel[$smallHashKey] = 'added'
+	        $tableAndCodeToInfo_Excel[$smallHashKey] = '__added__'
 		}
 	}
 
@@ -138,7 +142,7 @@ function createNewUilFile($filename) {
         foreach ($h in $tableAndCodeToInfo_Excel.GetEnumerator()) {
             $smallHashKey = $($h.Name)
             $value = $tableAndCodeToInfo_Excel[$smallHashKey]
-            if ($value -ne 'added') {
+            if ($value -ne '__added__') {
                 log " Line from the Excel which was not found in any UIL file: $smallHashKey"
                 $newLineArray = [System.Collections.ArrayList]@()
                 

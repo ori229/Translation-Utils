@@ -33,6 +33,9 @@ HE - all,Alma,Delta          --> HE_all_Alma_Delta.csv
 FR - all,Alma+Unimarc,Delta  --> etc.
 FR - all,Leganto,Delta
 
+getPreviousBranchName()
+
+Future:
 
 Add sub-system:
 select SUB_SYSTEM from C_C_TABLE_OF_TABLES
