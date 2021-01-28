@@ -46,11 +46,52 @@ function getSvnBranchesUrls() {
 
 ######################################
 function getPreviousBranchName() {
-    # TODO...
-    # Maybe using the list from here: http://urmbuild:Alma2017!@il-cvs01/repos/Alma/Alma/branches
-    return "September2020"
+    #return "September2020"
+    $baseurl = "http://il-cvs01/repos/Alma/Alma/branches/"
+
+    $basicAuthValue = getSvnBasicAuthVal
+    $Headers = @{    Authorization = $basicAuthValue     }
+
+    $html = New-Object -ComObject "HTMLFile";
+     # Get responce content as string
+    [string]$content = (Invoke-WebRequest -Uri $baseurl  -Headers $Headers -UseBasicParsing).Content 
+    $html.IHTMLDocument2_write($content);
+    $branches = $html.all.tags("li") | % InnerText
+
+    $PreviousBranchName = "September2020-PROD/"
+    foreach ($date in $branches) {
+        if($date -match "-PROD"){
+            if( [datetime]::parseexact(("01" + $PreviousBranchName -replace "-PROD/","").Trim(), 'ddMMMMyyyy',$null) -lt [datetime]::parseexact(("01" + $date -replace "-PROD/","").Trim(), 'ddMMMMyyyy',$null)){
+                $PreviousBranchName = $date
+            }
+         }
+    }
+    return $PreviousBranchName
 }
 
+######################################
+function deepClone($tableCodeToText_DB) {
+    # Serialize and Deserialize data using BinaryFormatter
+    # https://stackoverflow.com/questions/9204829/deep-copying-a-psobject/9206956#9206956
+    $ms = New-Object System.IO.MemoryStream
+    $bf = New-Object System.Runtime.Serialization.Formatters.Binary.BinaryFormatter
+    $bf.Serialize($ms, $tableCodeToText_DB)
+    $ms.Position = 0
+    $allEnglishCodeTablesMapping = $bf.Deserialize($ms)
+    $ms.Close()
+    return $allEnglishCodeTablesMapping
+}
+
+######################################
+function readConfigurationFile($fileName) {
+	$exportFiles = New-Object System.Collections.Generic.List[System.String]
+    log "Reading Configuration $fileName ..."
+	foreach($line in Get-Content $fileName) {
+		$exportFiles.Add($line)
+    }
+    log ""
+    return $exportFiles
+}
 
 #getSvnBranchesUrls
 #getOracleClientDllPath

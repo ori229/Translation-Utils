@@ -4,8 +4,12 @@ Import-Module $PSScriptRoot\utils\Utils-Excel.ps1    -Force
 Import-Module $PSScriptRoot\utils\Utils-General.ps1  -Force
 Import-Module $PSScriptRoot\utils\Utils-UilFiles.ps1 -Force
 
+# copied (and modified) from https://www.powershellgallery.com/packages/ImportExcel/5.4.5/Content/Export-Excel.ps1 :
+Import-Module $PSScriptRoot\utils\Excel-Module.ps1   -Force
+
 ######################################
 function main() {
+
     $pathRoot = $PSScriptRoot+"\work\"
     $now = Get-Date -format "yyyy-MM-dd_HH-mm-ss"
 
@@ -16,6 +20,9 @@ function main() {
     $tableAndCodeToInfo_Excel  = new-object System.Collections.Hashtable
     $tableCodeAndLangToText_Excel = new-object System.Collections.Hashtable
     $tableCodeAndLangToText_Uil   = new-object System.Collections.Hashtable # case sensitive
+    $tableCodeToSubSystem_DB = new-object System.Collections.Hashtable
+
+    $allEnglishCodeTablesMapping = new-object System.Collections.Hashtable
 
     $DEL = " _I_ "
     
@@ -26,6 +33,8 @@ function main() {
 
     # Read from the DB (because we might have new labels which are not yet in code_table_translation.uil):
     readEnFromDB
+    getCodeTablesSubSystem
+    
 
     # Create Excel file. English from the DB, and translation (if exists) from the UIL file:
     exportExcelFiles
@@ -37,143 +46,110 @@ function main() {
 
 ######################################
 function exportExcelFiles() {
-    exportExcelFile("HE")
+    $exportFiles = readConfigurationFile($PSScriptRoot+"\export_configuration.txt")
+
+    foreach($line in $exportFiles) {
+        $columns = $line.split("-")
+        $lang = $columns[0].trim()
+        $exportFilters = $columns[1].trim().split(",")
+        $isPatronFacing = $exportFilters[0] -eq "pf"
+        $labelSets = $exportFilters[1].ToUpper().split("+")
+        $isDelta = $exportFilters[2] -eq "Delta"
+        $ExportFileName = $pathRoot+$lang+"_"+$exportFilters[0]+"_"+$exportFilters[1]+"_"+$exportFilters[2]+".translations.xlsx"
+        $allEnglishCodeTablesMapping = deepClone($tableCodeToText_DB)
+        filterCodeTables $labelSets $isPatronFacing
+        exportExcelFile $lang $ExportFileName $isDelta
+    }
 }
 
 ######################################
-function exportExcelFile($lang) {
-    $langHeader = 'Translation ('+ $lang +')'
+function exportExcelFile($lang,$ExportFileName,$isDelta) {
+    [System.String]$langHeader = getLangHeader($lang)
+    if (Test-Path $ExportFileName) {
+        Remove-Item $ExportFileName
+    }
     $results = @()
-    foreach ($h in $tableCodeToText_DB.GetEnumerator()) {
+    foreach ($h in $allEnglishCodeTablesMapping.GetEnumerator()) {
         $key = $($h.Name)
-        $en = $tableCodeToText_DB[$key]
-        if ($en -match ".*[a-zA-Z].*") {
-            #log "good - has letters - $en"
-        } else {
-            #log "skip because the desc for en has no English letters: $en"
-            continue
-        }
-        if ($en.contains("_") -and -not $en.contains(" ")) {
-            #log "skip because the desc for en seem like a code: $en"
-            continue;
-        }
+        foreach ($c in $allEnglishCodeTablesMapping.Get_Item($key).GetEnumerator()) {
+            $codeValue = $($c.Name)
+            $en = $($c.Value)
+            if ($en -match ".*[a-zA-Z].*") {
+                #log "good - has letters - $en"
+            } else {
+                #log "skip because the desc for en has no English letters: $en"
+                continue
+            }
+            if ($en.contains("_") -and -not $en.contains(" ")) {
+                #log "skip because the desc for en seem like a code: $en"
+                continue;
+            }
 
-        $keyWithLang = $key+$DEL+$lang
-        $translation=""
-        if ($tableCodeAndLangToText_Uil.containsKey($keyWithLang)) {
-            $translation = $tableCodeAndLangToText_Uil[$keyWithLang]
-            #log "Found! $translation"
+            $keyWithLang =  $key + $DEL + $codeValue +$DEL+$lang
+            $translation=""
+            if ($tableCodeAndLangToText_Uil.containsKey($keyWithLang)) {
+                $translation = $tableCodeAndLangToText_Uil[$keyWithLang]
+                #log "Found! $translation"
+            }
+            if(-Not [string]::IsNullOrEmpty($translation) -And $isDelta -eq $true){
+                continue;
+            }
+
+            #if($en.startswith("=")){ # in the Export-Excel Module lines that started with "=" where converted to Formulas. When using our Excel-Module.ps1 file we can configure this as well.
+                #$en = "'$en"
+            #}
+            $details = @{            
+                    'Code table' = $key
+                    'codeValue'  = $codeValue
+                    'Sub system' = $tableCodeToSubSystem_DB[$key]
+                    'Original text (EN)' = $en
+                     $langHeader = $translation
+            }                           
+
+            $results += New-Object PSObject -Property $details  
         }
-
-        $details = @{            
-                'Code table' = $key -replace "$DEL.*",""
-                'codeValue'  = $key -replace ".*$DEL",""
-                'Sub system' = "."
-                'Original text (EN)' = $en
-                $langHeader = $translation
-        }                           
-
-        $results += New-Object PSObject -Property $details  
     }
     $results |
     Select-Object "Code table", "codeValue", "Sub system", "Original text (EN)", $langHeader | 
             Sort-Object -Property @{Expression="Code table"; Descending=$false}, @{Expression="codeValue" ;Descending=$false} |
-            Export-Csv $pathRoot$lang".translations.csv" -NoTypeInformation -Encoding UTF8
-    #TODO enable save-as XLSX
+            Export-Excel $ExportFileName -WorksheetName 'Code Table Translation' -NoNumberConversion * -BoldTopRow;
+            #Export-Csv $ExportFileName".csv" -NoTypeInformation -Encoding UTF8
+    
+    log "Finished Exprting File $ExportFileName ..."
+   
 }
 
-######################################
+#####################################
 function readEnFromDB() {
     add-type -path (getOracleClientDllPath)
 
     try{
         $con = New-Object Oracle.ManagedDataAccess.Client.OracleConnection -ArgumentList (getOracleConnectionString)
         $con.Open()
-        #Write-Host ("Connected to database: {0} – running on host: {1} – Servicename: {2} – Serverversion: {3}" -f $con.DatabaseName, $con.HostName, $con.ServiceName, $con.ServerVersion) -ForegroundColor Cyan -BackgroundColor Black
-        $sql="select CODE_TABLE_NAME,CODE,DESCRIPTION from C_C_CODE_TABLES where INSTITUTIONID=11 and lang='en'"
-        $sql=@"
-        select CODE_TABLE_NAME,CODE,DESCRIPTION from C_C_CODE_TABLES where INSTITUTIONID=11 and lang='en' and CODE_TABLE_NAME
-in (		'MashUpLabels',		'AlmaViewerLabels',		'DueDateUOM',		'dcTypeToDiscoveryType',		'FixedValueNone',
-		'HFulPolicy.DueDateFixedValues',		'PhysicalMaterialType',		'MashUpServicesTypes',
-		'MashUpGroups',		'UserBlockDescription',		'HFrUserFinesFees.fineFeeType',		'HFrUserFinesFees.fineFeeStatus',
-		'Currency_CT',		'SIP2_Language',		'SIP2ExtensionTypes',		'SIP2ItemIdentifier',
-		'FineFeePaymentReceiptLetter',		'FineFeeStatusReason',		'FineFeeTransactionType',		'FineFeeTransactionReason',
-		'FineIntervalsForLetter',		'PaymentMethod',		'SIPPaymentMethod',		'WorkbenchPaymentMethod',
-		'FulBorrowingInfoLetter',		'BibliographicMaterialType',		'AssignedObjectName',		'FulLostLoanLetter',
-		'SmsFulLostLoanLetter',		'FulLostLoanNotificationLetter',		'SmsFulLostLoanNotificationLetter',		'FulOverdueAndLostLoanLetter',
-		'SmsFulOverdueAndLostLoanLetter',		'FulOverdueAndLostLoanNotificationLetter',		'SmsFulOverdueAndLostLoanNotificationLetter',		'FulLostRefundFeeLoanLetter',
-		'FulUserLoansCourtesyLetter',		'SmsFulUserLoansCourtesyLetter',		'FulBorrowedByLetter',		'FulShortLoanLetter',
-		'FulShortenedDueDateLetter',		'SmsFulShortenedDueDateLetter',		'FulOutgoingEmailLetter',		'FulCancelEmailLetter',
-		'FulRenewEmailLetter',		'FulCancelRequestLetter',		'WorkOrderCancellationReasons',		'SmsFulCancelRequestLetter',
-		'RequestCancellationReasons',		'FulCitationsSlipLetter',		'FulPlaceOnHoldShelfLetter',		'SmsFulPlaceOnHoldShelfLetter',
-		'FulUserBorrowingActivityLetter',		'SmsFulUserBorrowingActivityLetter',		'FulUserOverdueNoticeLetter',		'SmsFulUserOverdueNoticeLetter',
-		'FulItemChangeDueDateLetter',		'SmsFulItemChangeDueDateLetter',		'FulDigitizationNotificationItemLetter',		'FulDigitizationDocumentDeliveryNotificationLetter',
-		'DigitizationType',		'InterestedInLetter',		'PhysicalDescription',		'holdingCallNumberType',
-		'PROCESSTYPE',		'resourceType',		'FulfillmentPlanStepTypes',		'FulfillmentPlanStatuses',
-		'RequestDestinationTypes',		'ApprovalStatus',		'RequestRejectReason',		'ResourceRequestStatuses',
-		'BorrowingRSRequestStatuses',		'LendingRSRequestStatuses',		'RequestStepStatus',		'ResourceRequestStatusNotes',
-		'RequestPriorities',		'RequestPrioritiesExternal',		'PlanStatuses',		'ExpiredHoldShelfItemsStatus',
-		'OutgoingResourceRequestStatuses',		'YesNo',		'mailReason.xsl',		'footer.xsl',
-		'FulRequestMoveItemTypes',		'CountryCodes',		'UserAddressTypes',		'UserEmailTypes',
-		'UserPhoneTypes',		'FinesAndFeesReportLetter',		'HItemLoan.processStatus',		'ItemPolicy',
-		'FulPersonalDeliveryLetter',		'LendingReqReportSlipLetter',		'FulReturnReceiptLetter',		'FulLoanReceiptLetter',
-		'PINNumberGenerationLetter',		'UserDeletionLetter',		'ExportUserLetter',		'WorkbenchPreferencesDescription',
-		'BasicRequestedMedia',		'AdditionalRequestedMedia',		'DeliveryMetadataFieldsDisplay',		'DCProfileQualifiedDublinCore',
-		'DCProfileDCApplicationprofile1',		'DCProfileDCApplicationprofile2',		'BorrowerOverdueEmailLetter',		'QueryToPatronLetter',
-		'UserNotificationsLetter',		'ResendNotificationLetter',		'TrialLetter',		'ILLWillSupplyReason',
-		'LendingRecallEmailLetter',		'FulfillmentPatronFacingDescriptors',		'ExternallyObtainedEmailLetter',		'LegantoNotificationsLetter',
-		'LegantoUpcomingDueDatesNotificationsLetter',		'ReadingListCitationSecondaryTypes',		'RequestTaskNameStaffDisplay',		'RequestTaskNamePatronDisplay',
-		'LibraryNoticesOptInDisplay',		'SocialLoginInviteLetter',		'SocialLoginAccountAttachedLetter',		'SocialLoginMessages',
-		'LoginUsingOneTimeTokenLetter',		'EmailRecordsLetter',		'ResourceSharingReturnSlipLetter',		'ResourceSharingReceiveSlipLetter',
-		'CloudIdPUserCreatedLetter',		'LinkedAccountSharedFiledsNames',		'UILegantoLabels',		'LegantoNotificationsLetter',
-		'RequestFormTypes',		'MandatoryBorrowingWorkflowSteps',		'PQAccessModel ',		'PublicAccessModel',
-		'MandatoryLendingWorkflowSteps',		'OptionalBorrowingWorkflowSteps',		'OptionalLendingWorkflowSteps',		'RequestFormats',
-		'GeneralMessageEmailLetter',		'LenderWillSupplyEmailLetter',		'LenderCheckedInEmailLetter',		'LenderRejectEmailLetter',
-		'LenderShipEmailLetter',		'LenderRenewResponseEmailLetter',		'BorrowerReceiveEmailLetter',		'BorrowerReturnEmailLetter',
-		'ResourceSharingCopyrightsStatus',		'AdvancedSearchIndexFieldLabels',		'GetitServicelabels',		'SuggestionsLabels',
-		'CitationTrail',		'LinksAndGeneralElectronicServicesLabels',		'LocalFieldsLabels',		'PrimaInterfaceLabels',
-		'PrimaAdvancedMediaTypeLabelsForAlma',		'PrimaAdvancedLanguagesLabels',		'PrimaAdvancedMediaTypeLabels',		'PrimaAriaLabels',
-		'PrimaCalculatedAvailabilityTextLabels',		'PrimaCitationLabels',		'PrimaDigitizationLabels',		'PrimaDisplayConstantsLabels',
-		'PrimaEShelfTileLabels',		'PrimaErrorMessagesLabels',		'PrimaFacetFsizeValuesCodesLabels',		'PrimaFacetLabels',
-		'PrimaFacetResourceTypeLabels',		'PrimaFacetsCodeFieldsLabels',		'PrimaFavoritesLabels',		'PrimaFinesListLabels',
-		'PrimaFullDisplayLabels',		'PrimaGenreLabels',		'PrimaGetITTab1Labels',		'PrimaGetitTileLabels',
-		'PrimaHeaderFooterTilesLabels',		'PrimaIconCodesLabels',		'PrimaInterfaceLanguageLabels',		'PrimaKeepingThisItemTileLabels',
-		'PrimaLanguageCodesLabels',		'PrimaLibraryCardLabels',		'PrimaLoansListLabels',		'PrimaLocationsTabLabels',
-		'PrimaMetadataFormatLabels',		'PrimaMyPreferencesTileLabels',		'PrimaPersonalSettingsLabels',		'PrimaPurchaseRequestLabels',
-		'PrimaRequestLabels',		'PrimaRequestTabMessagesLabels',		'PrimaRequestoptionsLabels',		'PrimaRequestsListLabels',
-		'PrimaResourceSharingLabels',		'PrimaResultsTileLabels',		'PrimaRisLabels',		'PrimaSearchProfileLabels',
-		'PrimaSearchTileLabels',		'PrimaSendEmailLabels',		'PrimaSortValuesLabels',		'PrimaTagsTileLabels',
-		'PrimaTopLevelFacetLabels',		'PrimaUserLoginLabels',		'AlmaUserLoginLabels',		'PrimaUserSpaceMenuLabels',
-		'PrimaUserTileLabels',		'PrimaViewItLabels',		'PrimaViewLabels',		'PrimaEndUserDepositLabels',
-		'PrimaRepresentationViewerLabels',		'PrimaRelatedItemseLabels',		'DepositReturnReasons',		'DepositDeclineReasons',
-		'ILLFulNetworkRejectReasons',		'DepositActivityLetter',		'FulFinesFeesNotificationLetter',		'FulPickupRequestReportLetter',
-		'FulRequestsReportLetter',		'DCProfileFieldsDescriptionViewer',		'NeedsPatronInformationOptions',		'DcType',
-		'HoldingsDisplayLabelsAndOrder',		'InternalLoginMessages',		'ResetPwLetter',		'PurchaseRequestStatusLetter',
-		'AutoLocateRejectReason',		'ILLUnfillReasons',		'AutoRenewRejectReasons',		'ViewerShareButtons',
-		'DepositEnrichmentLabels',		'ILLiadExportTypes',		'HandleBorrowingRequestForPurchaseRequest',		'DepositStatusUpdateLetter',
-		'PR_RejectReasons',		'BorrowerClaimEmailLetter',		'ChangeRapidoRequestTermsLetter',		'QueryToRequesterLetter',
-		'ResearchAssetsAddedToProfileLetter',		'PurchaseRequestStatus',		'PickupRulesRequestTypes',		'PlanTypes',
-		'PatronWelcomeLetter')
-"@
+        $sql="select CODE_TABLE_NAME,CODE,DESCRIPTION from C_C_CODE_TABLES t where t.lang='en' AND 
+             ( t.customerId  = 0 AND t.institutionId  = 11 AND t.libraryId  IS NULL AND t.libraryUnitId  IS NULL )
+             order by t.CODE_TABLE_NAME, t.DISPLAY_ORDER, t.description"
         $adap = New-Object Oracle.ManagedDataAccess.Client.OracleDataAdapter($sql,$con)
         $oraCmdBldr = New-Object Oracle.ManagedDataAccess.Client.OracleCommandBuilder($adap)
     
         [System.Data.DataSet]$dataset = New-Object System.Data.DataSet
         $tempNum = $adap.Fill($dataset)
-        Write-Host "Num of rows: $tempNum"
-        #$dataset.Tables[0]
-
         for($i=0;$i -lt $dataset.Tables[0].Rows.Count;$i++)  { 
-            #write-host "row num $i :    "
             $codeTableName = $($dataset.Tables[0].Rows[$i][0])
             $code          = $($dataset.Tables[0].Rows[$i][1])
-            $translation   = $($dataset.Tables[0].Rows[$i][2])
+            $description   = $($dataset.Tables[0].Rows[$i][2])
             $hashKey = $codeTableName + $DEL + $code
-            if ($tableCodeToText_DB.ContainsKey($hashKey)) {
-                log " WARNING: Key already in hash: $hashKey "
-            } else {
-                $tableCodeToText_DB.add($hashKey, $translation)
-                #log "...........added to hash:", $hashKey, $translation
+            if( -Not $tableCodeToText_DB.ContainsKey($codeTableName)){
+                $currentTableMapping = new-object System.Collections.Hashtable
+                $currentTableMapping.Set_Item($code,$description)
+                $tableCodeToText_DB.Set_Item($codeTableName,$currentTableMapping )
+            }else{
+               $currentTableMapping = $tableCodeToText_DB.Get_Item($codeTableName)
+               if ($currentTableMapping.ContainsKey($code)) {
+                  log " WARNING: Key already in hash: $hashKey "
+               }
+               $currentTableMapping.Set_Item($code,$description)
+               $tableCodeToText_DB.Set_Item($codeTableName,$currentTableMapping )
             }
         }
 
@@ -184,6 +160,216 @@ in (		'MashUpLabels',		'AlmaViewerLabels',		'DueDateUOM',		'dcTypeToDiscoveryTyp
     } finally{
         if ($con.State -eq 'Open') { $con.close() }
     }
+
+    
 }
+
+#####################################
+function getCodeTablesSubSystem(){
+    add-type -path (getOracleClientDllPath)
+    try{
+        $con = New-Object Oracle.ManagedDataAccess.Client.OracleConnection -ArgumentList (getOracleConnectionString)
+        $con.Open()
+        $sql="select t.code_table_name,t.sub_system from C_C_TABLE_OF_TABLES t where t.table_type='C' and
+             ( t.customerId  = 0 AND t.institutionId  = 11 AND t.libraryId  IS NULL AND t.libraryUnitId  IS NULL )"
+        $adap = New-Object Oracle.ManagedDataAccess.Client.OracleDataAdapter($sql,$con)
+        $oraCmdBldr = New-Object Oracle.ManagedDataAccess.Client.OracleCommandBuilder($adap)
+    
+        [System.Data.DataSet]$dataset = New-Object System.Data.DataSet
+        $tempNum = $adap.Fill($dataset)
+        for($i=0;$i -lt $dataset.Tables[0].Rows.Count;$i++)  { 
+            #write-host "row num $i :    "
+            $codeTableName = $($dataset.Tables[0].Rows[$i][0])
+            $subSystem = $($dataset.Tables[0].Rows[$i][1])
+            $tableCodeToSubSystem_DB.Set_Item($codeTableName,$subSystem )
+        }
+        
+        Remove-Variable dataset
+    } catch {
+        Write-Error ("Can't open connection: {0}`n{1}" -f `
+            $con.ConnectionString, $_.Exception.ToString())
+    } finally{
+        if ($con.State -eq 'Open') { $con.close() }
+    }
+}
+
+#####################################
+function filterCodeTables($labelSets,$isPatronFacing){
+    add-type -path (getOracleClientDllPath)
+
+    try{
+        $con = New-Object Oracle.ManagedDataAccess.Client.OracleConnection -ArgumentList (getOracleConnectionString)
+        $con.Open()
+        $sql="select m.target_code,m.source_code_2 from c_c_mapping_tables m where m.mapping_table_name='TranslationData' and m.source_code_4='N' and
+             ( m.customerId  = 0 AND m.institutionId  = 11 AND m.libraryId  IS NULL AND m.libraryUnitId  IS NULL )"
+        $adap = New-Object Oracle.ManagedDataAccess.Client.OracleDataAdapter($sql,$con)
+        $oraCmdBldr = New-Object Oracle.ManagedDataAccess.Client.OracleCommandBuilder($adap)
+    
+        [System.Data.DataSet]$dataset = New-Object System.Data.DataSet
+        $tempNum = $adap.Fill($dataset)
+        for($i=0;$i -lt $dataset.Tables[0].Rows.Count;$i++)  { 
+            #write-host "row num $i :    "
+            $targetCode = $($dataset.Tables[0].Rows[$i][0])
+            $sourceCode2 = $($dataset.Tables[0].Rows[$i][1])
+            if ([string]::IsNullOrEmpty($sourceCode2)){
+               $allEnglishCodeTablesMapping.Remove($targetCode)
+            }elseif($allEnglishCodeTablesMapping.ContainsKey($targetCode)){
+               $currentTableMapping = $allEnglishCodeTablesMapping.Get_Item($targetCode)
+               $currentTableMapping.Remove($sourceCode2)
+               $allEnglishCodeTablesMapping.Set_Item($targetCode,$currentTableMapping )
+            }
+        }
+        
+        Remove-Variable dataset
+    } catch {
+        Write-Error ("Can't open connection: {0}`n{1}" -f `
+            $con.ConnectionString, $_.Exception.ToString())
+    } finally{
+        if ($con.State -eq 'Open') { $con.close() }
+    }
+    filterByLabelSets($labelSets)
+    if($isPatronFacing -eq $true){
+       filterPatronFacingCodeTables
+    }
+    
+}
+
+#####################################
+function filterByLabelSets($labelSets){
+    $almaRequested = $labelSets -contains "ALMA"
+    $marcLabelSets = @( "UNIMARC", "CNMARC", "KORMARC", "MARC21", "GND", "DC")
+    $marcLabelRequested = @($labelSets | ?{$marcLabelSets -contains $_})
+    foreach($key in ($allEnglishCodeTablesMapping.clone()).keys){
+      $codeTableName = $key
+      if($codeTableName -eq "MARCProfileFieldsDescription"){
+        if($marcLabelRequested.Count -eq 0 ){
+            $allEnglishCodeTablesMapping.Remove($codeTableName)
+        }else{
+            $currentTableMapping = $allEnglishCodeTablesMapping.Get_Item($codeTableName) 
+            foreach($code in ($currentTableMapping.clone()).keys){
+                $save = $false
+                for ($i=0; $i -lt $marcLabelRequested.length; $i++) {
+	                if($code -Match $marcLabelRequested[$i]){
+                        $save = $true
+                    }
+                }
+                if($save -eq $false){
+                    $currentTableMapping.Remove($code)
+                }
+            }
+            $allEnglishCodeTablesMapping.Set_Item($codeTableName,$currentTableMapping )
+        }
+      }else{
+        $matchingSets = New-Object System.Collections.Generic.List[System.String]
+        if( $codeTableName.StartsWith("UILeganto")){
+            $matchingSets.Add('LEGANTO')
+        }
+        $subsystem = $tableCodeToSubSystem_DB[$codeTableName]
+        if ($subsystem -cMatch "PRIMA") {
+            $matchingSets.Add('SUPRIMA')
+        }
+        if ($subsystem -cMatch "RESEARCH") {
+            $matchingSets.Add('RESEARCH')
+        }
+        for ($i=0; $i -lt $marcLabelSets.length; $i++) {
+            if ($codeTableName -cMatch $marcLabelSets[$i]) {
+                $matchingSets.Add($marcLabelSets[$i])
+            }
+        }
+        $requestedSetsMatched = @($labelSets | ?{$matchingSets -contains $_})
+        if ($requestedSetsMatched.Count -eq 0 -And ($almaRequested -eq $false -Or ($almaRequested -And -Not $matchingSets.Count -eq  0))) {
+              $allEnglishCodeTablesMapping.Remove($codeTableName)          
+        }
+      }
+    }
+}
+
+#####################################
+function filterPatronFacingCodeTables(){
+    add-type -path (getOracleClientDllPath)
+    $patronFacingMap = new-object System.Collections.Hashtable
+    try{
+        $con = New-Object Oracle.ManagedDataAccess.Client.OracleConnection -ArgumentList (getOracleConnectionString)
+        $con.Open()
+        $sql="select m.target_code,m.source_code_2 from c_c_mapping_tables m where m.mapping_table_name='TranslationData' and m.source_code_3='Y' and m.source_code_3<>'N' and
+             ( m.customerId  = 0 AND m.institutionId  = 11 AND m.libraryId  IS NULL AND m.libraryUnitId  IS NULL )"
+        $adap = New-Object Oracle.ManagedDataAccess.Client.OracleDataAdapter($sql,$con)
+        $oraCmdBldr = New-Object Oracle.ManagedDataAccess.Client.OracleCommandBuilder($adap)
+    
+        [System.Data.DataSet]$dataset = New-Object System.Data.DataSet
+        $tempNum = $adap.Fill($dataset)
+        for($i=0;$i -lt $dataset.Tables[0].Rows.Count;$i++)  { 
+            #write-host "row num $i :    "
+            $targetCode = $($dataset.Tables[0].Rows[$i][0])
+            $sourceCode2 = $($dataset.Tables[0].Rows[$i][1])
+            if( -Not $patronFacingMap.ContainsKey($targetCode)){
+                $currentTableMapping = New-Object System.Collections.Generic.List[System.String]
+                $patronFacingMap.Set_Item($targetCode,$currentTableMapping )
+            }
+            $currentTableMapping = $patronFacingMap.Get_Item($targetCode)
+            if ( -Not  [string]::IsNullOrEmpty($sourceCode2)){
+                $currentTableMapping.Add($sourceCode2)
+                $patronFacingMap.Set_Item($targetCode,$currentTableMapping )
+            }
+        }
+        Remove-Variable dataset
+        foreach($codeTableName in ($allEnglishCodeTablesMapping.clone()).keys){
+            if(-Not $patronFacingMap.ContainsKey($codeTableName)){
+                $allEnglishCodeTablesMapping.Remove($codeTableName)
+                continue;
+            }
+            if($patronFacingMap.Get_Item($codeTableName).Count -gt 0){
+                $currentTableMapping = $allEnglishCodeTablesMapping.Get_Item($codeTableName) 
+                foreach($code in ($currentTableMapping.clone()).keys){
+                    if(-Not $patronFacingMap.Get_Item($codeTableName).Contains($code)){
+                        $currentTableMapping.Remove($code)
+                    }
+                }
+                $allEnglishCodeTablesMapping.Set_Item($codeTableName,$currentTableMapping )
+            }
+        }
+        
+        Remove-Variable patronFacingMap
+    } catch {
+        Write-Error ("Can't open connection: {0}`n{1}" -f `
+            $con.ConnectionString, $_.Exception.ToString())
+    } finally{
+        if ($con.State -eq 'Open') { $con.close() }
+    }
+
+    
+}
+
+#####################################
+function getLangHeader($lang) {
+ add-type -path (getOracleClientDllPath)
+    [System.String]$description = 'Translation ('+ $lang +')' 
+    try{
+        $con = New-Object Oracle.ManagedDataAccess.Client.OracleConnection -ArgumentList (getOracleConnectionString)
+        $con.Open()
+        #Write-Host ("Connected to database: {0} – running on host: {1} – Servicename: {2} – Serverversion: {3}" -f $con.DatabaseName, $con.HostName, $con.ServiceName, $con.ServerVersion) -ForegroundColor Cyan -BackgroundColor Black
+        $sql="select description from C_C_CODE_TABLES t 
+                where t.CODE_TABLE_NAME='UserPreferredLanguage' and t.lang= 'en' and t.code='"+$lang.ToLower()+"' AND 
+                ( ( t.customerId  = 0 AND t.institutionId  = 11 AND t.libraryId  IS NULL AND t.libraryUnitId  IS NULL ) ) order by t.DISPLAY_ORDER"
+        $adap = New-Object Oracle.ManagedDataAccess.Client.OracleDataAdapter($sql,$con)
+        $oraCmdBldr = New-Object Oracle.ManagedDataAccess.Client.OracleCommandBuilder($adap)
+        [System.Data.DataSet]$dataset = New-Object System.Data.DataSet
+        $tempNum = $adap.Fill($dataset)
+        if($tempNum -gt 0){
+            $description = $dataset.Tables[0].rows[0].description +' ('+ $lang +')' 
+        }else{
+            log ("Invalid language code: {0}" -f` $lang)
+        }
+        Remove-Variable dataset
+    } catch {
+        Write-Error ("Can't open connection: {0}`n{1}" -f `
+            $con.ConnectionString, $_.Exception.ToString())
+    } finally{
+        if ($con.State -eq 'Open') { $con.close() }
+    }
+    #Write-Information $description
+    return $description
+}
+
 
 main

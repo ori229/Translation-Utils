@@ -1,0 +1,4 @@
+AR - pf,Alma,all
+HE - all,Alma,Delta
+FR - all,Alma+Unimarc,Delta
+FR - all,Leganto,Delta
