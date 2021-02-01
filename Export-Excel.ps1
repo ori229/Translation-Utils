@@ -49,9 +49,8 @@ function exportExcelFiles() {
     $exportFiles = readConfigurationFile($PSScriptRoot+"\export_configuration.txt")
 
     foreach($line in $exportFiles) {
-        $columns = $line.split("-")
-        $lang = $columns[0].trim()
-        $exportFilters = $columns[1].trim().split(",")
+        $lang = $line.Substring(0,$line.LastIndexOf('-')).trim()
+        $exportFilters = $line.Substring($line.LastIndexOf('-')+1).trim().split(",")
         $isPatronFacing = $exportFilters[0] -eq "pf"
         $labelSets = $exportFilters[1].ToUpper().split("+")
         $isDelta = $exportFilters[2] -eq "Delta"
