@@ -49,6 +49,10 @@ function exportExcelFiles() {
     $exportFiles = readConfigurationFile($PSScriptRoot+"\export_configuration.txt")
 
     foreach($line in $exportFiles) {
+        if ([string]::IsNullOrEmpty($line) -Or $line.StartsWith("#") -Or -Not ( $line -match "-" -And $line -match ",") ) {
+            log "Skipping line $line in export_configuration ..."
+            continue;
+        } 
         $lang = $line.Substring(0,$line.LastIndexOf('-')).trim()
         $exportFilters = $line.Substring($line.LastIndexOf('-')+1).trim().split(",")
         $isPatronFacing = $exportFilters[0] -eq "pf"
@@ -346,7 +350,7 @@ function getLangHeader($lang) {
     try{
         $con = New-Object Oracle.ManagedDataAccess.Client.OracleConnection -ArgumentList (getOracleConnectionString)
         $con.Open()
-        #Write-Host ("Connected to database: {0} – running on host: {1} – Servicename: {2} – Serverversion: {3}" -f $con.DatabaseName, $con.HostName, $con.ServiceName, $con.ServerVersion) -ForegroundColor Cyan -BackgroundColor Black
+        #Write-Host ("Connected to database: {0} running on host: {1} Servicename: {2} Serverversion: {3}" -f $con.DatabaseName, $con.HostName, $con.ServiceName, $con.ServerVersion) -ForegroundColor Cyan -BackgroundColor Black
         $sql="select description from C_C_CODE_TABLES t 
                 where t.CODE_TABLE_NAME='UserPreferredLanguage' and t.lang= 'en' and t.code='"+$lang.ToLower()+"' AND 
                 ( ( t.customerId  = 0 AND t.institutionId  = 11 AND t.libraryId  IS NULL AND t.libraryUnitId  IS NULL ) ) order by t.DISPLAY_ORDER"
