@@ -8,12 +8,11 @@ Compare Excel file to the UIL to verify the labels were merged.
 
 Export config:
 
-lang patron-facing/all, product and/or area (UNIMARC / CNMARC / KORMARC / MARC21 / GND / DC), all/ Delta (only lines without translation, supposedly new)
-AR - pf,Alma,all
-HE - all,Alma,Delta
-FR - all,Alma+Unimarc,Delta
-FR - all,Leganto,Delta
-
+Lang-code - patron-facing/all, product (ALMA / RESEARCH / SUPRIMA / LEGANTO) and/or area (UNIMARC / CNMARC / KORMARC / MARC21 / GND / DC), all/ Delta (only lines without translation, supposedly new)
+AR - pf,ALMA,all
+HE - all,ALMA,Delta
+FR - all,ALMA+UNIMARC,Delta
+FR - all,LEGANTO,Delta
 
 Export is done from Oracle, so:
 Install Oracle 12 Client as explained here
