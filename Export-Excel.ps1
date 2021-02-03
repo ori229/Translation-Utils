@@ -4,8 +4,14 @@ Import-Module $PSScriptRoot\utils\Utils-Excel.ps1    -Force
 Import-Module $PSScriptRoot\utils\Utils-General.ps1  -Force
 Import-Module $PSScriptRoot\utils\Utils-UilFiles.ps1 -Force
 
-# copied (and modified) from https://www.powershellgallery.com/packages/ImportExcel/5.4.5/Content/Export-Excel.ps1 :
-Import-Module $PSScriptRoot\utils\Excel-Module.ps1   -Force
+# Load EPPlus - can the below DLL and ps1 files can be taken from https://www.powershellgallery.com/packages/ImportExcel/7.1.1
+$storageAssemblyPath = $PSScriptRoot+'\utils\EPPlus.dll'
+$bytes = [System.IO.File]::ReadAllBytes($storageAssemblyPath)
+[System.Reflection.Assembly]::Load($bytes)
+Import-Module $PSScriptRoot\utils\Excel-Module.ps1        -Force
+Import-Module $PSScriptRoot\utils\Open-ExcelPackage.ps1   -Force
+Import-Module $PSScriptRoot\utils\Add-Worksheet.ps1       -Force
+Import-Module $PSScriptRoot\utils\Expand-NumberFormat.ps1 -Force 
 
 ######################################
 function main() {
