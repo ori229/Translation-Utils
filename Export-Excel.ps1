@@ -145,8 +145,13 @@ function readEnFromDB() {
         $tempNum = $adap.Fill($dataset)
         for($i=0;$i -lt $dataset.Tables[0].Rows.Count;$i++)  { 
             $codeTableName = $($dataset.Tables[0].Rows[$i][0])
-            $code          = $($dataset.Tables[0].Rows[$i][1])
+            $code          = $($dataset.Tables[0].Rows[$i][1]).Trim()
             $description   = $($dataset.Tables[0].Rows[$i][2])
+            #log "_____ $codeTableName $code $description"
+            if ([string]::IsNullOrEmpty($code)) {
+                log "Skip empty code for $description"
+                continue;
+            }
             $hashKey = $codeTableName + $DEL + $code
             if( -Not $tableCodeToText_DB.ContainsKey($codeTableName)){
                 $currentTableMapping = new-object System.Collections.Hashtable
