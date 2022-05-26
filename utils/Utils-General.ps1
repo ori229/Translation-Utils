@@ -15,6 +15,20 @@ function getSvnBasicAuthVal() {
 }
 
 ######################################
+function getSvnUser(){
+    $AppProps = convertfrom-stringdata (get-content $PSScriptRoot"\..\private.properties" -raw)
+    #log "      Using user: "($AppProps.'svn.user')
+    return $AppProps.'svn.user'
+}
+
+######################################
+function getSvnPw(){
+    $AppProps = convertfrom-stringdata (get-content $PSScriptRoot"\..\private.properties" -raw)
+    #log "      Using user: "($AppProps.'svn.pw')
+    return $AppProps.'svn.pw'
+}
+
+######################################
 # https://docs.bentley.com/LiveContent/web/Bentley%20i-model%20Composition%20Service%20for%20S3D%20Help-v2/en/GUID-AEFD08A2-1EEF-404E-93F9-C069FA46F33C.html
 function getOracleClientDllPath() {
     $AppProps = convertfrom-stringdata (get-content $PSScriptRoot"\..\private.properties" -raw)
@@ -60,13 +74,13 @@ function getPreviousBranchName() {
 
     $PreviousBranchName = "September2020-PROD/"
     foreach ($date in $branches) {
-        if($date -match "-PROD"){
+        if($date -match "-PROD/"){
             if( [datetime]::parseexact(("01" + $PreviousBranchName -replace "-PROD/","").Trim(), 'ddMMMMyyyy',$null) -lt [datetime]::parseexact(("01" + $date -replace "-PROD/","").Trim(), 'ddMMMMyyyy',$null)){
                 $PreviousBranchName = $date
             }
          }
     }
-    return $PreviousBranchName
+    return ($PreviousBranchName -replace "-PROD/","").Trim()
 }
 
 ######################################

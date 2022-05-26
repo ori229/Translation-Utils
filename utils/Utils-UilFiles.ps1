@@ -123,12 +123,12 @@ function createNewUilFile($filename) {
                 }
                 $langCodeForCol = $langCodes[$j]
                 $hashKey = $codeTableName + $DEL + $code + $DEL + $langCodeForCol
-                if ($tableCodeAndLangToText_Excel.ContainsKey($hashKey)) {
+                if ($tableCodeAndLangToText_Excel.ContainsKey($hashKey) -and $tableCodeAndLangToText_Excel[$hashKey].Trim() -ne $existingTranslation.Trim() ) {
                     $newTranslation = $tableCodeAndLangToText_Excel[$hashKey].trim()
-                    #log " We have new translatino for this lang - $hashKey : $newTranslation"
+                    log " We have new translation for this lang - $hashKey : $newTranslation"
                     $tempNum = $updatedLineArray.Add($newTranslation)
                 } else {
-                    #log " No new translatino for this lang - $hashKey - using existing: $existingTranslation"
+                    #log " No new translation for this lang - $hashKey - using existing: $existingTranslation"
                     $tempNum = $updatedLineArray.Add($existingTranslation)
                 }
             }
@@ -156,7 +156,7 @@ function createNewUilFile($filename) {
                     $hashKey = $smallHashKey + $DEL + $langCodeForCol
                     if ($tableCodeAndLangToText_Excel.ContainsKey($hashKey)) {
                         $newTranslation = $tableCodeAndLangToText_Excel[$hashKey]
-                        log " We have NEW translatino for this lang - $hashKey : $newTranslation"
+                        log " We have NEW translation for this lang - $hashKey : $newTranslation"
                         $tempNum = $newLineArray.Add($newTranslation)
                     } else {
                         #log " No NEW translatino for this lang - $hashKey"
@@ -189,10 +189,6 @@ function appendLineFromString ($str, $outFile) {
 
 ######################################
 function backupOldAndRenameNew($branchUrl) {
-    $branchUrl = $branchUrl -replace ".*branches.",''
-    $branchUrl = $branchUrl -replace ".*trunk.",''
-    $branchUrl = $branchUrl -replace ".dps-build-runtime.*",''
-
     log "Saving UIL files for $branchUrl"
 
     Rename-Item $pathRoot"code_tables_translation.uil" $pathRoot"code_tables_translation.uil.$branchUrl.$now"
@@ -201,3 +197,61 @@ function backupOldAndRenameNew($branchUrl) {
     Rename-Item $pathRoot"code_tables_translation.uil.new.txt" $pathRoot"code_tables_translation.uil.$branchUrl.$now.new"
     Rename-Item $pathRoot"alma_labels.uil.new.txt"             $pathRoot"alma_labels.uil.$branchUrl.$now.new"
 }
+
+######################################
+function commitUpdatedUilFile($branchName) {
+
+    $workingCopyDir= $pathRoot+$branchName+"\"
+    Copy-Item $pathRoot"code_tables_translation.uil.$branchName.$now.new"    $workingCopyDir"factory_settings\code_tables_translation.uil"  -Force
+    Copy-Item $pathRoot"alma_labels.uil.$branchName.$now.new"                $workingCopyDir"factory_settings\alma_labels.uil"              -Force
+
+    $user = getSvnUser
+    $pw = getSvnPw
+
+    svn commit --username $user --password $pw -m "JIRA: URM-24347 Developer: almatranslation Description: Merge new translations $now"  $pathRoot$branchName"\factory_settings\code_tables_translation.uil"
+    svn commit --username $user --password $pw -m "JIRA: URM-24347 Developer: almatranslation Description: Merge new translations $now"  $pathRoot$branchName"\factory_settings\alma_labels.uil"
+    	
+    log "END Saving UIL files for $branchName"
+}
+
+
+######################################
+function getBranchName($branchUrl){
+
+    $branchUrl = $branchUrl -replace ".*branches.",''
+    $branchUrl = $branchUrl -replace ".*trunk.",''
+    $branchUrl = $branchUrl -replace ".dps-build-runtime.*",''
+
+    return $branchUrl
+}
+
+
+######################################
+function getSvnWorkingCopy($branchUrl, $branchName){
+
+    log ("Fetching the files from "+$branchUrl)
+
+    $workingCopyDir= $pathRoot+$branchName+"\"
+    
+    if ((Test-Path $workingCopyDir)){
+        Remove-Item -LiteralPath $workingCopyDir -Force -Recurse
+    }
+    New-Item -ItemType directory -Path $workingCopyDir
+
+    cd $workingCopyDir
+    svn checkout  $branchUrl --depth empty
+    cd "factory_settings"
+     
+    #get UIL files from the svn
+    svn up "alma_labels.uil"
+    svn up "code_tables_translation.uil"
+
+    cd $pathRoot
+
+    cd ..
+
+    Move-Item -Path $workingCopyDir"factory_settings\code_tables_translation.uil" -Destination $pathRoot"code_tables_translation.uil" -Force
+    Move-Item -Path $workingCopyDir"factory_settings\alma_labels.uil"             -Destination $pathRoot"alma_labels.uil" -Force
+
+}
+

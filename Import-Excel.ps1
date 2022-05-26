@@ -6,7 +6,7 @@ Import-Module $PSScriptRoot\utils\Utils-General.ps1  -Force
 
 ######################################
 function main() {
-    $pathRoot = $PSScriptRoot+"\work\"
+    $pathRoot = $PSScriptRoot+"\import\"
 
     $now = Get-Date -format "yyyy-MM-dd_HH-mm-ss"
 
@@ -24,13 +24,15 @@ function main() {
     foreach ($branchUrl in (getSvnBranchesUrls).GetEnumerator()) {
         log "_________________________"
 
-        fetchUilFilesFromSvn $branchUrl
+        $branchName = getBranchName $branchUrl
+
+        getSvnWorkingCopy $branchUrl $branchName
 
         createNewUilFiles
 
-        backupOldAndRenameNew $branchUrl
+        backupOldAndRenameNew $branchName
 
-        #commitUpdatedUilFile
+        commitUpdatedUilFile $branchName
     }
 
     log "Done!"
