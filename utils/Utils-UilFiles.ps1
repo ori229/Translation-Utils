@@ -136,7 +136,10 @@ function createNewUilFile($filename) {
 	        $tableAndCodeToInfo_Excel[$smallHashKey] = '__added__'
 		}
 	}
-
+    if ($lineNum -eq 0) { 
+        log "file $filename is empty" 
+        return
+    }
     # handling code-table labels which are translated for the first time
     if ([io.path]::GetFileNameWithoutExtension($filename)  -eq 'code_tables_translation') {
         foreach ($h in $tableAndCodeToInfo_Excel.GetEnumerator()) {
@@ -156,7 +159,7 @@ function createNewUilFile($filename) {
                     $hashKey = $smallHashKey + $DEL + $langCodeForCol
                     if ($tableCodeAndLangToText_Excel.ContainsKey($hashKey)) {
                         $newTranslation = $tableCodeAndLangToText_Excel[$hashKey]
-                        log " We have NEW translation for this lang - $hashKey : $newTranslation"
+                        #log " We have NEW translation for this lang - $hashKey : $newTranslation"
                         $tempNum = $newLineArray.Add($newTranslation)
                     } else {
                         #log " No NEW translatino for this lang - $hashKey"
