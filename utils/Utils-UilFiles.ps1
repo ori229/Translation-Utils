@@ -241,13 +241,16 @@ function getSvnWorkingCopy($branchUrl, $branchName){
     }
     New-Item -ItemType directory -Path $workingCopyDir
 
+	$user = getSvnUser
+    $pw = getSvnPw
+	
     cd $workingCopyDir
-    svn checkout  $branchUrl --depth empty
+    svn checkout --username $user --password $pw $branchUrl --depth empty
     cd "factory_settings"
      
     #get UIL files from the svn
-    svn up "alma_labels.uil"
-    svn up "code_tables_translation.uil"
+    svn --username $user --password $pw up "alma_labels.uil"
+    svn --username $user --password $pw up "code_tables_translation.uil"
 
     cd $pathRoot
 
