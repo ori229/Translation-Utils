@@ -19,7 +19,7 @@ function main() {
     $tableAndCodeToInfo_Excel     = new-object System.Collections.Hashtable # case sensitive
     #$tableCodeAndLangToText_Uil   = new-object System.Collections.Hashtable # case sensitive
 
-    readExcelFiles
+    $fileNames = readExcelFiles
 
     foreach ($branchUrl in (getSvnBranchesUrls).GetEnumerator()) {
         log "_________________________"
@@ -32,7 +32,7 @@ function main() {
 
         backupOldAndRenameNew $branchName
 
-        commitUpdatedUilFile $branchName
+        commitUpdatedUilFile $branchName $fileNames
     }
 
     log "Done!"

@@ -1,9 +1,12 @@
 
 ######################################
 function readExcelFiles() {
+    $allFiles = ""
 	foreach($file in (Get-ChildItem -path "$pathRoot*" -include *.xlsx )) {
+        $allFiles += " " + $file.Name
         readExcelFile($file)
 	}
+    return $allFiles;
 }
 
 ######################################

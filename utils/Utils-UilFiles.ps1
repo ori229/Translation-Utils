@@ -202,7 +202,7 @@ function backupOldAndRenameNew($branchUrl) {
 }
 
 ######################################
-function commitUpdatedUilFile($branchName) {
+function commitUpdatedUilFile($branchName, $fileNames) {
 
     $workingCopyDir= $pathRoot+$branchName+"\"
     Copy-Item $pathRoot"code_tables_translation.uil.$branchName.$now.new"    $workingCopyDir"factory_settings\code_tables_translation.uil"  -Force
@@ -211,8 +211,8 @@ function commitUpdatedUilFile($branchName) {
     $user = getSvnUser
     $pw = getSvnPw
 
-    svn commit --username $user --password $pw -m "JIRA: URM-24347 Developer: almatranslation Description: Merge new translations $now"  $pathRoot$branchName"\factory_settings\code_tables_translation.uil"
-    svn commit --username $user --password $pw -m "JIRA: URM-24347 Developer: almatranslation Description: Merge new translations $now"  $pathRoot$branchName"\factory_settings\alma_labels.uil"
+    svn commit --username $user --password $pw -m "JIRA: URM-24347 Developer: almatranslation Description: Merge new translations $now Files: $fileNames"  $pathRoot$branchName"\factory_settings\code_tables_translation.uil"
+    svn commit --username $user --password $pw -m "JIRA: URM-24347 Developer: almatranslation Description: Merge new translations $now Files: $fileNames"  $pathRoot$branchName"\factory_settings\alma_labels.uil"
     	
     log "END Saving UIL files for $branchName"
 }
