@@ -21,4 +21,4 @@ FR - all,LEGANTO,Delta
 Export is done from Oracle, so:
 Install Oracle 12 Client as explained here
 https://docs.bentley.com/LiveContent/web/Bentley%20i-model%20Composition%20Service%20for%20S3D%20Help-v2/en/GUID-AEFD08A2-1EEF-404E-93F9-C069FA46F33C.html
-or simply take Y:\RnD_Executable\Higher_Ed_Platform\Translation-Utils\Oracle.ManagedDataAccess.dll and update private.properties 
+or simply take Oracle.ManagedDataAccess.dll from the zip here, and update private.properties 
