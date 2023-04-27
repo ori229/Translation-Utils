@@ -18,10 +18,7 @@ FR - all,ALMA+UNIMARC,Delta
 
 FR - all,LEGANTO,Delta
 
-Export is done from Oracle, so:
-
-
-Installation
+# Installation
 
 Download code from here (https://github.com/ori229/Translation-Utils/archive/refs/heads/master.zip)
 
