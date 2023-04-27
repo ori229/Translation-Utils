@@ -19,6 +19,47 @@ FR - all,ALMA+UNIMARC,Delta
 FR - all,LEGANTO,Delta
 
 Export is done from Oracle, so:
+
+
+Installation
+
+Download code from here (https://github.com/ori229/Translation-Utils/archive/refs/heads/master.zip)
+
+Unzip to a folder under C:\
+
 Install Oracle 12 Client as explained here
 https://docs.bentley.com/LiveContent/web/Bentley%20i-model%20Composition%20Service%20for%20S3D%20Help-v2/en/GUID-AEFD08A2-1EEF-404E-93F9-C069FA46F33C.html
-or simply take Oracle.ManagedDataAccess.dll from the zip here, and update private.properties 
+or take Oracle.ManagedDataAccess.dll from the zip you have downloaded, and update private.properties with the path accordinaly.
+
+Sample lines for private.properties :
+
+db.user=v2u8_urm00
+
+db.pw=v2u8_urm00
+
+db.dataSource=(DESCRIPTION=(ADDRESS=(PROTOCOL=TCP)(HOST=il-urm08.corp.exlibrisgroup.com)(PORT=1521))(CONNECT_DATA=(SID=urm)))
+
+db.oracleClientDllPath=C:\\Temp\\Oracle.ManagedDataAccess.dll
+
+svn.user=almatranslation 
+
+svn.pw=...
+
+
+Verify you are connected to the VPN
+
+Open PowerShell as administrator and run: (for any questions answer Yes to all)
+
+Set-ExecutionPolicy -ExecutionPolicy Unrestricted -Scope CurrentUser
+
+Set-ExecutionPolicy -ExecutionPolicy Unrestricted -Scope LocalMachine    
+
+
+"cd" to Translation-Utils folder in PowerShell and run:
+
+Unblock-File *.ps1
+
+Unblock-File utils\*.ps1
+
+
+Right-click on the Export-Excel file and choose "Run with PowerShell"
