@@ -28,21 +28,6 @@ Install Oracle 12 Client as explained here
 https://docs.bentley.com/LiveContent/web/Bentley%20i-model%20Composition%20Service%20for%20S3D%20Help-v2/en/GUID-AEFD08A2-1EEF-404E-93F9-C069FA46F33C.html
 or take Oracle.ManagedDataAccess.dll from the zip you have downloaded, and update private.properties with the path accordinaly.
 
-Sample lines for private.properties :
-
-db.user=v2u8_urm00
-
-db.pw=v2u8_urm00
-
-db.dataSource=(DESCRIPTION=(ADDRESS=(PROTOCOL=TCP)(HOST=il-urm08.corp.exlibrisgroup.com)(PORT=1521))(CONNECT_DATA=(SID=urm)))
-
-db.oracleClientDllPath=C:\\Temp\\Oracle.ManagedDataAccess.dll
-
-svn.user=almatranslation 
-
-svn.pw=...
-
-
 Verify you are connected to the VPN
 
 Open PowerShell as administrator and run: (for any questions answer Yes to all)
