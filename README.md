@@ -41,7 +41,7 @@ Set-ExecutionPolicy -ExecutionPolicy Unrestricted -Scope LocalMachine
 
 Unblock-File *.ps1
 
-Unblock-File utils\*.ps1
+Unblock-File utils\\*.ps1
 
 
 Right-click on the Export-Excel file and choose "Run with PowerShell"
