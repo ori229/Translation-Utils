@@ -26,7 +26,7 @@ Unzip to a folder under C:\
 
 Install Oracle 12 Client as explained here
 https://docs.bentley.com/LiveContent/web/Bentley%20i-model%20Composition%20Service%20for%20S3D%20Help-v2/en/GUID-AEFD08A2-1EEF-404E-93F9-C069FA46F33C.html
-or take Oracle.ManagedDataAccess.dll from the zip you have downloaded, and update private.properties with the path accordinaly.
+or take Oracle.ManagedDataAccess.dll from the zip you have downloaded - (unzip and unblock the file), and update private.properties with the path accordinaly.
 
 Verify you are connected to the VPN
 
