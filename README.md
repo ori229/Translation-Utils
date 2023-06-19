@@ -20,13 +20,13 @@ FR - all,LEGANTO,Delta
 
 # Installation
 
-Download code from here (https://github.com/ori229/Translation-Utils/archive/refs/heads/master.zip)
+Download the code from here (https://github.com/ori229/Translation-Utils/archive/refs/heads/master.zip)
 
 Unzip to a folder under C:\
 
 Install Oracle 12 Client as explained here
 https://docs.bentley.com/LiveContent/web/Bentley%20i-model%20Composition%20Service%20for%20S3D%20Help-v2/en/GUID-AEFD08A2-1EEF-404E-93F9-C069FA46F33C.html
-or take Oracle.ManagedDataAccess.dll from the zip you have downloaded - (unzip and unblock the file), and update private.properties with the path accordinaly.
+or take Oracle.ManagedDataAccess.dll from the zip you have downloaded - (unzip and unblock the file), and update private.properties with the path accordingly.
 
 Verify you are connected to the VPN
 
@@ -37,11 +37,16 @@ Set-ExecutionPolicy -ExecutionPolicy Unrestricted -Scope CurrentUser
 Set-ExecutionPolicy -ExecutionPolicy Unrestricted -Scope LocalMachine    
 
 
-"cd" to Translation-Utils folder in PowerShell and run:
+"cd" to main folder in PowerShell and run:
 
 Unblock-File *.ps1
 
 Unblock-File utils\\*.ps1
 
+"cd" to the folder where you placed the dll file and run:
+
+Unblock-File Oracle.ManagedDataAccess.dll
+
+If you didn't install Eclipse yet, you don't have "svn".  You can install "svn" by running AlmaDevInstallation.exe
 
 Right-click on the Export-Excel file and choose "Run with PowerShell"
