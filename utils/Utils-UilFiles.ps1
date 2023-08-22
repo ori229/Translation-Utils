@@ -124,7 +124,7 @@ function createNewUilFile($filename) {
                 $langCodeForCol = $langCodes[$j]
                 $hashKey = $codeTableName + $DEL + $code + $DEL + $langCodeForCol
                 if ($tableCodeAndLangToText_Excel.ContainsKey($hashKey) -and $tableCodeAndLangToText_Excel[$hashKey].Trim() -ne $existingTranslation.Trim() ) {
-                    $newTranslation = $tableCodeAndLangToText_Excel[$hashKey].Trim([char]0x000A, [char]0x0020, [char]0x200B)
+                    $newTranslation = $tableCodeAndLangToText_Excel[$hashKey].Trim([char]0x000A, [char]0x0020, [char]0x200B) -replace '(\n|\r|\t)',' '
                     log " We have new translation for this lang - $hashKey : $newTranslation"
                     $tempNum = $updatedLineArray.Add($newTranslation)
                 } else {
