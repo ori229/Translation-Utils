@@ -1,4 +1,4 @@
-
+﻿
 ######################################
 function fetchUilFilesFromSvn($baseurl) {
     log ("Fetching the files from "+$baseurl)
@@ -158,7 +158,7 @@ function createNewUilFile($filename) {
                     $langCodeForCol = $langCodes[$j]
                     $hashKey = $smallHashKey + $DEL + $langCodeForCol
                     if ($tableCodeAndLangToText_Excel.ContainsKey($hashKey)) {
-                        $newTranslation = $tableCodeAndLangToText_Excel[$hashKey]
+                        $newTranslation = $tableCodeAndLangToText_Excel[$hashKey].Trim([char]0x000A, [char]0x0020, [char]0x200B) -replace '(\n|\r|\t)',' '
                         #log " We have NEW translation for this lang - $hashKey : $newTranslation"
                         $tempNum = $newLineArray.Add($newTranslation)
                     } else {
