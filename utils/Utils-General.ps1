@@ -71,18 +71,16 @@ function getPreviousBranchName() {
     [string]$content = (Invoke-WebRequest -Uri $baseurl  -Headers $Headers -UseBasicParsing).Content 
     $html.IHTMLDocument2_write($content);
     $branches = $html.all.tags("li") | % InnerText
-	log "branches from url $branches ..."
+
     $PreviousBranchName = "September2020-PROD/"
     foreach ($date in $branches) {
         if($date -match "-PROD/" -and -not ($date -match "clean-PROD/") -and -not ($date -match "update-PROD/")){
 			log "date is $date ..."
             if( [datetime]::parseexact(("01" + $PreviousBranchName -replace "-PROD/","").Trim(), 'ddMMMMyyyy',$null) -lt [datetime]::parseexact(("01" + $date -replace "-PROD/","").Trim(), 'ddMMMMyyyy',$null)){
                 $PreviousBranchName = $date
-				log "setting PreviousBranchName to $PreviousBranchName ..."
             }
          }
     }
-	log "after foreach PreviousBranchName is $PreviousBranchName"
     return ($PreviousBranchName -replace "-PROD/","").Trim()
 }
 
