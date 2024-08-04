@@ -54,6 +54,8 @@ function getSvnBranchesUrls() {
         $svnUrlPrefix + "trunk/alma_soft"                               + $svnUrlSuffix
         $svnUrlPrefix + "branches/alma_release"                         + $svnUrlSuffix
         $svnUrlPrefix + "branches/" + (getPreviousBranchName) + "-PROD" + $svnUrlSuffix
+        $svnUrlPrefix + "branches/October2024clean-PROD" + $svnUrlSuffix
+        $svnUrlPrefix + "branches/October2024update-PROD" + $svnUrlSuffix
     )
     return $branches
 }
@@ -76,7 +78,7 @@ function getPreviousBranchName() {
     foreach ($date in $branches) {
         if($date -match "-PROD/" -and -not ($date -match "clean-PROD/") -and -not ($date -match "update-PROD/")){
 			log "date is $date ..."
-            if( [datetime]::parseexact(("01" + $PreviousBranchName -replace "-PROD/","").Trim(), 'ddMMMMyyyy',$null) -lt [datetime]::parseexact(("01" + $date -replace "-PROD/","").Trim(), 'ddMMMMyyyy',$null)){
+            if([datetime]::Parseexact(("01" + ($PreviousBranchName -replace "-PROD/","")).Trim(), 'ddMMMMyyyy',[System.Globalization.CultureInfo]::InvariantCulture) -lt [datetime]::parseexact(("01" + ($date -replace "-PROD/","")).Trim(), 'ddMMMMyyyy',[System.Globalization.CultureInfo]::InvariantCulture)){
                 $PreviousBranchName = $date
             }
          }
