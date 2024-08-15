@@ -1,3 +1,7 @@
+Moved to SVN in 2024. This is just a backup. See URM-229697
+
+
+
 # Translation Utils
  
 Export translations from Alma into Excel file per language.
